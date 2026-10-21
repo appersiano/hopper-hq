@@ -25,3 +25,5 @@ The browser UI's JavaScript bundle includes code from the libraries below, each 
 ## Agent icons
 
 The Codex and Claude Code (Clawd) SVG marks in `ui/assets/agents/` come from `@lobehub/icons-static-svg` 1.95.1 ([LobeHub Icons](https://github.com/lobehub/lobe-icons)), Copyright (c) 2023 LobeHub, under the MIT licence in `licenses/lobe-icons-MIT.txt`. Presentation attributes are adjusted for local CSS sizing. The SVGs are bundled with the UI; no icon service is contacted. Product marks remain the trademarks of their respective owners.
+
+The Cursor and Antigravity marks in this fork (`ui/assets/agents/cursor.svg`, `ui/assets/agents/antigravity.svg`) are original geometric drawings. They are not the Cursor or Google product logos.

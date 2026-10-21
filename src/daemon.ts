@@ -5,6 +5,8 @@ import type { AddressInfo } from 'node:net';
 import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
+import { AntigravityAdapter } from './adapters/antigravity/fs-adapter.js';
+import { CursorAdapter } from './adapters/cursor/fs-adapter.js';
 import { CodexAdapter } from './adapters/codex/fs-adapter.js';
 import { FsAdapter } from './adapters/claude-code/fs-adapter.js';
 import { DEMO_LEISURE_HOUR, demoSummaryLine, startDemo } from './adapters/demo.js';
@@ -30,6 +32,9 @@ export interface DaemonOptions {
   viaPort?: number;
   claudeDir?: string;
   codexDir?: string;
+  cursorDir?: string;
+  /** Gemini home used by Antigravity (`~/.gemini`). */
+  antigravityDir?: string;
   dataDir?: string;
   /** Watch ~/.claude on disk (default true). The mod works either way. */
   watchFiles?: boolean;
@@ -219,8 +224,12 @@ async function serve(opts: DaemonOptions, paths: Paths, lock: DataDirLock): Prom
         openRuns: (id) => collector.session(id)?.runs.filter((r) => r.status === 'running' && r.onDisk).map((r) => r.id) ?? [],
       });
   const codexAdapter = watchFiles ? new CodexAdapter({ codexDir: opts.codexDir ?? process.env.CODEX_HOME ?? join(homedir(), '.codex'), emit: e => void collector.ingest(e), resolveWorkspace, ignoreCwd, log }) : null;
+  const cursorAdapter = watchFiles ? new CursorAdapter({ cursorDir: opts.cursorDir ?? join(homedir(), '.cursor'), emit: (e) => void collector.ingest(e), resolveWorkspace, ignoreCwd, log }) : null;
+  const antigravityAdapter = watchFiles ? new AntigravityAdapter({ geminiDir: opts.antigravityDir ?? join(homedir(), '.gemini'), emit: (e) => void collector.ingest(e), resolveWorkspace, ignoreCwd, log }) : null;
   fsAdapter?.start();
   codexAdapter?.start();
+  cursorAdapter?.start();
+  antigravityAdapter?.start();
   const demo = opts.demo ? startDemo((e) => void collector.ingest(e), { showcase: opts.showcase }) : null;
   log(`hopper-hq is listening on http://127.0.0.1:${port}`);
 
@@ -234,6 +243,8 @@ async function serve(opts: DaemonOptions, paths: Paths, lock: DataDirLock): Prom
       summarizer.stop();
       fsAdapter?.stop();
       codexAdapter?.stop();
+      cursorAdapter?.stop();
+      antigravityAdapter?.stop();
       demo?.stop();
       hub.close();
       server.closeAllConnections();

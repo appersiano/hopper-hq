@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }],
+    "sessionEnd": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }],
+    "beforeSubmitPrompt": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }],
+    "preToolUse": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }],
+    "postToolUse": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }],
+    "postToolUseFailure": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }],
+    "subagentStart": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }],
+    "subagentStop": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }],
+    "stop": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }],
+    "afterAgentResponse": [{ "command": "hopper-hq cursor-hook", "timeout": 5 }]
+  }
+}

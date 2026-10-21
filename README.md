@@ -4,7 +4,7 @@
 
 **A local dashboard for keeping an eye on your coding-agent sessions while they work.**
 
-An isometric office building where every Claude Code or Codex CLI session gets a desk, and a red window means someone is waiting for you.
+An isometric office building where every Claude Code, Codex, Cursor, or Antigravity session gets a desk, and a red window means someone is waiting for you.
 
 [![npm version](https://img.shields.io/npm/v/@fairmind-ai/hopper-hq?logo=npm&color=cb3837)](https://www.npmjs.com/package/@fairmind-ai/hopper-hq)
 [![npm downloads](https://img.shields.io/npm/dm/@fairmind-ai/hopper-hq?logo=npm&color=cb3837)](https://www.npmjs.com/package/@fairmind-ai/hopper-hq)
@@ -36,7 +36,7 @@ Provided by [FairMind](https://fairmind.ai/?utm_source=github&utm_medium=oss&utm
 
 Every session gets a desk in an isometric office building: one floor per feature, pods of desks for each checkout, interns for subagents, meeting rooms for workflows, a lounge for idle sessions, and a basement archive for finished work. Robots walk between them as sessions change state. A red window on the façade means someone is waiting for you.
 
-Supports Claude Code (local and cloud) and local Codex CLI sessions.
+Supports Claude Code (local and cloud), local Codex CLI sessions, Cursor agent chats, and Antigravity conversations.
 
 ## Quick start
 
@@ -446,6 +446,20 @@ A permission hook turns the window red until subsequent tool activity, a prompt 
 The rollout parser and hook payloads are fixture-tested against the source schemas in [Codex 0.162.0](https://github.com/openai/codex/tree/rust-v0.162.0), including legacy `response_item` and paginated `item_completed` records. This is source/fixture compatibility, not an end-to-end certification of every CLI build. See the [rollout persistence policy](https://github.com/openai/codex/blob/rust-v0.162.0/codex-rs/rollout/src/policy.rs), [hook inputs](https://github.com/openai/codex/blob/rust-v0.162.0/codex-rs/hooks/src/schema.rs), and [release notes](https://github.com/openai/codex/releases).
 
 These are internal and experimental formats. Other versions are read on a best-effort basis with a warning per version. Unknown or malformed complete records are skipped and counted; partial lines wait for the next poll. Histories replay in bounded chunks, preserving earlier turn and child lifecycle records; a large history may take several polls to catch up. Filesystem discovery does not depend on Codex's private SQLite index.
+
+## Cursor
+
+Cursor agent chats are read from `~/.cursor/projects/<project>/agent-transcripts/<id>/<id>.jsonl`. The project folder name is the working directory with each `/` replaced by `-`. Pass `--cursor-dir` to `up` or `start` when Cursor's config is not `~/.cursor`. A transcript older than seven days is left out. A finished desk leaves the building on the same four-hour quiet period as Codex. hopper-hq never writes under `~/.cursor`.
+
+Live state comes from Cursor hooks. Merge `plugins/cursor/hooks.json` into `~/.cursor/hooks.json`, keeping the hooks you already have, and leave `hopper-hq` on `PATH`. The command is `hopper-hq cursor-hook`. It reports the session, the prompt, tool calls, subagents, the reply and the end of the turn, then prints the allow response Cursor requires so the tool still runs. `AskQuestion` turns the window red. A shell approval that never reaches a hook stays on the file's own signal: silence becomes "no signal". `Go` still needs a tmux pane, which a Cursor chat does not have.
+
+## Antigravity
+
+Antigravity CLI, the Antigravity app and the Antigravity IDE are read from `~/.gemini/antigravity-cli/brain`, `~/.gemini/antigravity/brain` and `~/.gemini/antigravity-ide/brain`. The transcript is `transcript_full.jsonl` when it is there, otherwise `transcript.jsonl`. The same conversation id is followed once, CLI first. The working directory comes from that product's `cache/last_conversations.json`, or from a workspace path on the transcript line. Pass `--antigravity-dir` when the Gemini home is not `~/.gemini`. The same seven-day and four-hour rules as Cursor apply. Nothing under `~/.gemini` is written.
+
+Live state comes from Antigravity hooks. The payload does not name the event, so the command does: `hopper-hq antigravity-hook PreToolUse`. Merge `plugins/antigravity/hooks.json` into `~/.gemini/config/hooks.json`, or into `.agents/hooks.json` for one workspace. `ask_question` and `ask_permission` turn the window red. `invoke_subagent` is an intern for that step. `PreToolUse` is answered with `{"decision":"allow"}`; the hook does not grant or deny permissions of its own.
+
+These file formats are internal. A line hopper-hq does not understand is skipped.
 
 ## How it works
 

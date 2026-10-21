@@ -32,7 +32,10 @@ export function toolLabel(tool: string, input: unknown, cwd?: string): string {
   }
   switch (tool) {
     case 'Bash':
-      return truncate(`Bash: ${str(i.command).split('\n')[0] ?? ''}`);
+    case 'Shell':
+      return truncate(`${tool}: ${str(i.command).split('\n')[0] ?? ''}`);
+    case 'run_command':
+      return truncate(`run_command: ${str(i.CommandLine).split('\n')[0] ?? ''}`);
     case 'Read':
     case 'Edit':
     case 'Write':
@@ -78,7 +81,8 @@ function isTestRunnerInvocation(command: string): boolean {
 }
 
 function isSmokeBash(input: unknown): boolean {
-  const command = str(asRecord(input).command).split('\n')[0]?.toLowerCase() ?? '';
+  const record = asRecord(input);
+  const command = (str(record.command) || str(record.CommandLine)).split('\n')[0]?.toLowerCase() ?? '';
   if (!command) return false;
   const runner = isTestRunnerInvocation(command);
   if (runner && SMOKE_WORD.test(command)) return true;
@@ -89,7 +93,7 @@ function isSmokeBash(input: unknown): boolean {
 
 /** Whether the tool call a session/sub-agent made runs a smoke test. Pure; no I/O, no Date. */
 export function isSmokeTest(tool: string, input: unknown): boolean {
-  if (tool === 'Bash') return isSmokeBash(input);
+  if (tool === 'Bash' || tool === 'Shell' || tool === 'run_command') return isSmokeBash(input);
   if (tool === 'Skill') return /smoke/i.test(str(asRecord(input).skill));
   if (tool.startsWith('mcp__playwright__')) {
     return Object.values(asRecord(input)).some((v) => typeof v === 'string' && SMOKE_FILE.test(v.toLowerCase()));

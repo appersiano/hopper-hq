@@ -1,5 +1,7 @@
+import { forwardAntigravityHook } from './adapters/antigravity/forward.js';
 import { forwardClaudeHook } from './adapters/claude-code/forward.js';
 import { forwardCodexHook } from './adapters/codex/forward.js';
+import { forwardCursorHook } from './adapters/cursor/forward.js';
 import { spawn } from 'node:child_process';
 import { mkdir, open, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -109,10 +111,12 @@ const stdio: Io = {
 export const HELP = `hopper-hq: watch your coding-agent sessions work
 
 Usage:
-  hopper-hq up [--port N] [--no-open] [--claude-dir DIR] [--codex-dir DIR] [--data-dir DIR] [--via-port N]
-  hopper-hq start [--port N] [--claude-dir DIR] [--codex-dir DIR] [--data-dir DIR] [--no-watch] [--via-port N]
+  hopper-hq up [--port N] [--no-open] [--claude-dir DIR] [--codex-dir DIR] [--cursor-dir DIR] [--antigravity-dir DIR] [--data-dir DIR] [--via-port N]
+  hopper-hq start [--port N] [--claude-dir DIR] [--codex-dir DIR] [--cursor-dir DIR] [--antigravity-dir DIR] [--data-dir DIR] [--no-watch] [--via-port N]
   hopper-hq claude-hook
   hopper-hq codex-hook
+  hopper-hq cursor-hook
+  hopper-hq antigravity-hook [EVENT]
   hopper-hq down [--data-dir DIR]
   hopper-hq status [--format text|tmux|json] [--data-dir DIR]
   hopper-hq ls [--data-dir DIR]
@@ -144,6 +148,12 @@ export async function main(argv: string[], io: Io = stdio): Promise<number> {
         return 0;
       case 'codex-hook':
         await forwardCodexHook();
+        return 0;
+      case 'cursor-hook':
+        await forwardCursorHook();
+        return 0;
+      case 'antigravity-hook':
+        await forwardAntigravityHook(process.stdin, process.env, args[0]);
         return 0;
       case 'up':
         return await cmdUp(args, io);
@@ -217,7 +227,7 @@ function viaPortOption(value: string | undefined): number | undefined {
 async function cmdUp(args: string[], io: Io): Promise<number> {
   const { values } = parseArgs({
     args,
-    options: { port: { type: 'string' }, 'via-port': { type: 'string' }, 'no-open': { type: 'boolean', default: false }, 'claude-dir': { type: 'string' }, 'codex-dir': { type: 'string' }, ...dataDirOption },
+    options: { port: { type: 'string' }, 'via-port': { type: 'string' }, 'no-open': { type: 'boolean', default: false }, 'claude-dir': { type: 'string' }, 'codex-dir': { type: 'string' }, 'cursor-dir': { type: 'string' }, 'antigravity-dir': { type: 'string' }, ...dataDirOption },
   });
   const port = portOption(values.port);
   const viaPort = viaPortOption(values['via-port']);
@@ -236,6 +246,8 @@ async function cmdUp(args: string[], io: Io): Promise<number> {
   if (port !== undefined) startArgs.push('--port', String(port));
   if (viaPort !== undefined) startArgs.push('--via-port', String(viaPort));
   if (values['codex-dir'] !== undefined) startArgs.push('--codex-dir', resolve(values['codex-dir']));
+  if (values['cursor-dir'] !== undefined) startArgs.push('--cursor-dir', resolve(values['cursor-dir']));
+  if (values['antigravity-dir'] !== undefined) startArgs.push('--antigravity-dir', resolve(values['antigravity-dir']));
   if (values['claude-dir'] !== undefined) startArgs.push('--claude-dir', resolve(values['claude-dir']));
   const daemon = await (io.spawnDaemon ?? spawnDetached)(startArgs, log);
   let ended = false;
@@ -282,14 +294,14 @@ async function logSince(log: string, from: number): Promise<string[]> {
 async function cmdStart(args: string[], io: Io): Promise<number> {
   const { values } = parseArgs({
     args,
-    options: { port: { type: 'string' }, 'via-port': { type: 'string' }, 'claude-dir': { type: 'string' }, 'codex-dir': { type: 'string' }, ...dataDirOption, 'no-watch': { type: 'boolean', default: false } },
+    options: { port: { type: 'string' }, 'via-port': { type: 'string' }, 'claude-dir': { type: 'string' }, 'codex-dir': { type: 'string' }, 'cursor-dir': { type: 'string' }, 'antigravity-dir': { type: 'string' }, ...dataDirOption, 'no-watch': { type: 'boolean', default: false } },
   });
   const port = portOption(values.port);
   const viaPort = viaPortOption(values['via-port']);
   const { startDaemon } = await import('./daemon.js');
   let daemon;
   try {
-    daemon = await startDaemon({ port, viaPort, claudeDir: values['claude-dir'], codexDir: values['codex-dir'], dataDir: values['data-dir'], watchFiles: !values['no-watch'], log: io.err });
+    daemon = await startDaemon({ port, viaPort, claudeDir: values['claude-dir'], codexDir: values['codex-dir'], cursorDir: values['cursor-dir'], antigravityDir: values['antigravity-dir'], dataDir: values['data-dir'], watchFiles: !values['no-watch'], log: io.err });
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
       io.err(`Port ${port ?? 7337} is already in use. Is hopper-hq already running? Check with: hopper-hq status`);

@@ -2,6 +2,7 @@
  * Session views -> the scene model the browser draws (types.ts). Server-only: it builds on core/view.ts.
  * Pure and deterministic: the same views in any order give the same scene, down to its JSON text. Every string is cleaned.
  */
+import { unprefixedId } from '../core/agents.js';
 import type { WorkflowRun } from '../core/types.js';
 import { assignLeisure, waitingSubagents } from '../core/leisure.js';
 import { liveRun } from '../core/reducer.js';
@@ -86,7 +87,7 @@ const bySessionStart = (a: SessionView, b: SessionView): number => a.startedAt -
 
 /** Session name, or '<repo>-<first 4 characters of id>'. */
 function nameOf(v: SessionView): string {
-  const id = v.agentKind === 'codex' ? v.id.replace(/^codex-/, '') : v.id;
+  const id = unprefixedId(v.agentKind, v.id);
   return cleanOrNull(v.name) ?? cleanText(`${v.workspace.repoName}-${Array.from(cleanText(id)).slice(0, 4).join('')}`);
 }
 

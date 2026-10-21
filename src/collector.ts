@@ -1,3 +1,4 @@
+import { fileDiscovered } from './core/agents.js';
 import type { WorkspaceResolver } from './adapters/git.js';
 import { DEFAULT_THRESHOLDS, type LeisureWindow, type Thresholds } from './config.js';
 import { DEFAULT_FEATURE_RULES, deriveFeature, type FeatureRules } from './core/feature.js';
@@ -243,7 +244,7 @@ export class Collector {
       prev = applyEvent(undefined, { type: 'session.seen', sessionId: e.sessionId, ts: e.ts, seq: e.seq, source: e.source, agentKind: e.agentKind, cwd: e.cwd, workspace, startedAt: e.ts });
       created = true;
     }
-    if (prev && e.agentKind === 'codex' && e.cwd && e.cwd !== prev.workspace.cwd) prev = { ...prev, workspace: await this.o.resolveWorkspace(e.cwd) };
+    if (prev && e.agentKind && fileDiscovered(e.agentKind) && e.cwd && e.cwd !== prev.workspace.cwd) prev = { ...prev, workspace: await this.o.resolveWorkspace(e.cwd) };
     const next = applyEvent(prev, e);
     if (!next) {
       this.dropped++;

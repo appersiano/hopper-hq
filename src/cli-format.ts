@@ -1,4 +1,5 @@
 import type { AttentionSummary, Snapshot } from './collector.js';
+import { AGENT_LABEL } from './core/agents.js';
 import type { SessionState } from './core/types.js';
 import { repoLabels } from './core/view.js';
 import { cleanText, formatAgo, reasonText, STATE_LABEL, taskTitle } from './scene/text.js';
@@ -25,7 +26,8 @@ export function formatAttentionText(a: AttentionSummary, now: number): string {
     .map((i) => {
       const mark = i.state === 'needs_you' ? '◉' : '✓';
       const what = i.state === 'needs_you' ? reasonText(i.reason) : (i.title ?? 'Finished');
-      return `${mark} ${pad(cleanText(i.name ?? i.id.replace(/^codex-/, '').slice(0, 8)), 28)} ${pad(formatAgo(now - i.since), 5)} ${cleanText(what, 70)}${pane(i.tmuxPane)}`;
+      const bare = i.id.replace(/^(?:codex|cursor|antigravity)-/, '');
+      return `${mark} ${pad(cleanText(i.name ?? bare.slice(0, 8)), 28)} ${pad(formatAgo(now - i.since), 5)} ${cleanText(what, 70)}${pane(i.tmuxPane)}`;
     })
     .join('\n');
 }
@@ -44,7 +46,7 @@ export function formatBuilding(s: Snapshot): string {
     for (const v of f.sessions) {
       const detail = v.effectiveState === 'needs_you' ? reasonText(v.waitReason) : (taskTitle(v) ?? '');
       const repo = cleanText(label(v)) + (v.workspace.worktree ? '*' : '');
-      out.push(`  ${MARK[v.effectiveState]} ${pad(STATE_LABEL[v.effectiveState], 10)} ${pad(v.agentKind === 'codex' ? 'Codex' : 'Claude Code', 11)} ${pad(repo, 22)} ${pad(formatAgo(s.generatedAt - v.effectiveSince), 5)} ${cleanText(detail, 60)}${pane(v.tmuxPane)}`);
+      out.push(`  ${MARK[v.effectiveState]} ${pad(STATE_LABEL[v.effectiveState], 10)} ${pad(AGENT_LABEL[v.agentKind], 11)} ${pad(repo, 22)} ${pad(formatAgo(s.generatedAt - v.effectiveSince), 5)} ${cleanText(detail, 60)}${pane(v.tmuxPane)}`);
     }
   }
   return out.join('\n');

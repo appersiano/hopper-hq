@@ -1,3 +1,4 @@
+import { fileDiscovered } from './agents.js';
 import { DEFAULT_THRESHOLDS, type Thresholds } from '../config.js';
 import { capKey } from '../scene/text.js';
 import { DEFAULT_FEATURE_RULES, deriveFeature, type FeatureRules } from './feature.js';
@@ -15,7 +16,7 @@ export function effectiveState(s: Session, now: number, t: Thresholds = DEFAULT_
 
   // Rollout discovery can replay completed turns long after their CLI has exited.
   // Expire their desks only; keep the session so a resumed turn can return.
-  if (s.agentKind === 'codex' && (state === 'done' || state === 'idle' || state === 'dormant')) {
+  if (fileDiscovered(s.agentKind) && (state === 'done' || state === 'idle' || state === 'dormant')) {
     const expiresAt = Math.max(s.lastEventAt, s.stateSince) + t.doneToIdleMs;
     if (now >= expiresAt) return { state: 'ended', since: expiresAt };
   }

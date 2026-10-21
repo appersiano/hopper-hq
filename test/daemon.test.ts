@@ -10,7 +10,12 @@ import { newSession } from '../src/core/reducer.js';
 import type { RawEvent, Session, WorkflowRun } from '../src/core/types.js';
 import { readDaemonFile } from '../src/daemon-file.js';
 import { RETENTION_MS, startDaemon as startRawDaemon, type DaemonOptions } from '../src/daemon.js';
-const startDaemon = async (opts: DaemonOptions) => startRawDaemon({ codexDir: await mkdtemp(join(tmpdir(), 'shq-codex-')), ...opts });
+const startDaemon = async (opts: DaemonOptions) => startRawDaemon({
+  codexDir: await mkdtemp(join(tmpdir(), 'shq-codex-')),
+  cursorDir: await mkdtemp(join(tmpdir(), 'shq-cursor-')),
+  antigravityDir: await mkdtemp(join(tmpdir(), 'shq-gemini-')),
+  ...opts,
+});
 import { CSP } from '../src/server/headers.js';
 import type { Seating } from '../src/scene/seating.js';
 import { cleanText } from '../src/scene/text.js';
@@ -134,7 +139,7 @@ describe('startDaemon and the sessions it saved', () => {
     const store = await Store.open(join(dataDir, 'hopper.db'));
     store.saveSessions([{ ...newSession('S1', Date.now() - 60 * 60_000, { cwd, repoRoot: cwd, repoName: 'payments-svc', worktree: false, branch: 'main' }), state: 'in_meeting', pid: process.pid, runs: [run] }], Date.now());
     store.close();
-    const d = await startDaemon({ port: 0, dataDir, claudeDir, log: quiet });
+    const d = await startDaemon({ port: 0, dataDir, claudeDir, cursorDir: join(dataDir, 'cursor'), antigravityDir: join(dataDir, 'gemini'), log: quiet });
     try {
       // Nothing writes its journal any more and nothing will end it: the scan kills it.
       await vi.waitFor(() => expect(d.collector.session('S1')?.runs.map((r) => [r.id, r.status])).toEqual([['wf_0000aaaa-001', 'killed']]), { timeout: 5000 });
@@ -243,7 +248,7 @@ describe('startDaemon and summaries', () => {
     await file('a.json', 'X1', dir);
     await file('b.json', 'X2', await realpath(dir));
     await file('c.json', 'S1', '/home/dev/payments-svc');
-    const d = await startDaemon({ port: 0, dataDir, claudeDir, log: quiet });
+    const d = await startDaemon({ port: 0, dataDir, claudeDir, cursorDir: join(dataDir, 'cursor'), antigravityDir: join(dataDir, 'gemini'), log: quiet });
     try {
       await vi.waitFor(() => expect(d.collector.session('S1')).not.toBeNull(), { timeout: 5000 });
       await d.collector.idle();
@@ -363,7 +368,7 @@ describe('startDaemon and summaries', () => {
     for (const held of [true, false]) {
       const r = await restarted(held);
       const s = standIn(async () => 'Done: the checkout is verified.');
-      const d = await startDaemon({ port: 0, dataDir: r.dataDir, claudeDir: r.claudeDir, log: quiet, summarizer: { provider: s.provider, settleMs: 0 } });
+      const d = await startDaemon({ port: 0, dataDir: r.dataDir, claudeDir: r.claudeDir, cursorDir: join(r.dataDir, 'cursor'), antigravityDir: join(r.dataDir, 'gemini'), log: quiet, summarizer: { provider: s.provider, settleMs: 0 } });
       try {
         // The end file names the run: once the name is in, the scan has read it.
         await vi.waitFor(() => expect(d.collector.session('S1')?.runs[0]?.name).toBe('checkout-verify'), { timeout: 5000 });
@@ -415,7 +420,7 @@ describe('startDaemon and summaries', () => {
     store.close();
     await writeSummaryConfig(dataDir, { enabled: true });
     const s = standIn(async () => 'Waits for the invoice audit.');
-    const d = await startDaemon({ port: 0, dataDir, claudeDir, log: quiet, summarizer: { provider: s.provider, settleMs: 0 } });
+    const d = await startDaemon({ port: 0, dataDir, claudeDir, cursorDir: join(dataDir, 'cursor'), antigravityDir: join(dataDir, 'gemini'), log: quiet, summarizer: { provider: s.provider, settleMs: 0 } });
     try {
       await vi.waitFor(() => expect(d.collector.session('S4')?.state).toBe('ended'), { timeout: 5000 });
       await d.collector.idle();

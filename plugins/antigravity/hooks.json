@@ -1,0 +1,9 @@
+{
+  "hopper-hq": {
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "hopper-hq antigravity-hook SessionStart", "timeout": 5 }] }],
+    "PreToolUse": [{ "hooks": [{ "type": "command", "command": "hopper-hq antigravity-hook PreToolUse", "timeout": 5 }] }],
+    "PostToolUse": [{ "hooks": [{ "type": "command", "command": "hopper-hq antigravity-hook PostToolUse", "timeout": 5 }] }],
+    "PreInvocation": [{ "hooks": [{ "type": "command", "command": "hopper-hq antigravity-hook PreInvocation", "timeout": 5 }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "hopper-hq antigravity-hook Stop", "timeout": 5 }] }]
+  }
+}

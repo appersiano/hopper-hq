@@ -1,11 +1,15 @@
 import type { AgentKind } from '../../src/core/types';
-import codex from '../assets/agents/codex.svg';
+import antigravity from '../assets/agents/antigravity.svg';
 import claudeCode from '../assets/agents/claude-code.svg';
+import codex from '../assets/agents/codex.svg';
+import cursor from '../assets/agents/cursor.svg';
 import '../styles/agent-badge.css';
 
 export const AGENT_BADGES: Record<AgentKind, { name: string; image: string }> = {
   'claude-code': { name: 'Claude Code', image: claudeCode },
   codex: { name: 'Codex', image: codex },
+  cursor: { name: 'Cursor', image: cursor },
+  antigravity: { name: 'Antigravity', image: antigravity },
 };
 
 /** A local, fixed-size identity mark. Status stays in the label's separate dot. */

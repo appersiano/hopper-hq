@@ -72,7 +72,7 @@ describe('end to end', () => {
     ].map((l) => JSON.stringify(l)).join('\n') + '\n');
 
     const dataDir = join(base, 'data');
-    const d = await startDaemon({ port: 0, claudeDir, dataDir, log: () => {} });
+    const d = await startDaemon({ port: 0, claudeDir, dataDir, cursorDir: join(base, 'cursor'), antigravityDir: join(base, 'gemini'), log: () => {} });
     try {
       // The session is announced before its transcript is read: wait until the title from the transcript is in too.
       const floor = await waitFor(d.collector, () => d.collector.snapshot().floors.find((f) => f.name === 'e2e-flow' && f.sessions[0]?.title));

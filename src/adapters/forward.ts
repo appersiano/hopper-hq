@@ -3,24 +3,35 @@ import { request } from 'node:http';
 import { resolvePaths } from '../config.js';
 import { readDaemonFile } from '../daemon-file.js';
 
-/** Silent, bounded observer transport shared by the CLI hook commands. */
-export async function forwardHook(path: string, input: AsyncIterable<Buffer | string>, env: NodeJS.ProcessEnv): Promise<void> {
+const defaultPrepare = (payload: Record<string, unknown>): boolean => Boolean(payload.session_id && payload.hook_event_name);
+
+/**
+ * Silent, bounded observer transport shared by the CLI hook commands.
+ * `prepare` may fill session_id and hook_event_name. It returns false when the payload must not be posted.
+ * The parsed object is returned either way, so a hook that has to answer the agent can still do so.
+ */
+export async function forwardHook(
+  path: string,
+  input: AsyncIterable<Buffer | string>,
+  env: NodeJS.ProcessEnv,
+  prepare: (payload: Record<string, unknown>) => boolean = defaultPrepare,
+): Promise<Record<string, unknown> | null> {
   try {
-    if (env.HOPPER_HQ_SUMMARIZER !== undefined) return;
+    if (env.HOPPER_HQ_SUMMARIZER !== undefined) return null;
     const chunks: Buffer[] = [];
     let size = 0;
     for await (const chunk of input) {
       const part = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
       size += part.length;
-      if (size > 900_000) return;
+      if (size > 900_000) return null;
       chunks.push(part);
     }
     const value: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const payload = value as Record<string, unknown>;
-    if (!payload.session_id || !payload.hook_event_name) return;
+    if (!prepare(payload)) return payload;
     const info = await readDaemonFile(resolvePaths({}, env).dataDir);
-    if (!info) return;
+    if (!info) return payload;
     const pane = env.TMUX_PANE;
     if (pane && /^%\d+$/.test(pane)) {
       payload.hopper_tmux_pane = pane;
@@ -39,5 +50,9 @@ export async function forwardHook(path: string, input: AsyncIterable<Buffer | st
       req.on('timeout', () => { req.destroy(); resolve(); });
       req.end(body);
     });
-  } catch { /* Observing a session must never interrupt it, including when the daemon is down. */ }
+    return payload;
+  } catch {
+    /* Observing a session must never interrupt it, including when the daemon is down. */
+    return null;
+  }
 }

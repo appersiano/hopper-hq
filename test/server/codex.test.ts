@@ -46,7 +46,7 @@ it('discovers a Codex rollout through the running daemon and stops its watcher',
     return JSON.stringify(record);
   }).join('\n') + '\n';
   await writeFile(path, liveFixture);
-  const daemon = await startDaemon({ dataDir: join(dir, 'data'), claudeDir: join(dir, 'claude'), codexDir, port: 0, log: () => {} });
+  const daemon = await startDaemon({ dataDir: join(dir, 'data'), claudeDir: join(dir, 'claude'), codexDir, cursorDir: join(dir, 'cursor'), antigravityDir: join(dir, 'gemini'), port: 0, log: () => {} });
   try {
     await expect.poll(() => daemon.collector.session('codex-11111111-1111-4111-8111-111111111111')?.state).toBe('done');
     expect(daemon.collector.snapshot().floors[0]?.sessions[0]?.agentKind).toBe('codex');

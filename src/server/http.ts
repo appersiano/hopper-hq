@@ -1,5 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { createRequire } from 'node:module';
+import { mapAntigravityHook } from '../adapters/antigravity/hooks.js';
+import { mapCursorHook } from '../adapters/cursor/hooks.js';
 import { mapCodexHook } from '../adapters/codex/hooks.js';
 import { mapHookPayload } from '../adapters/claude-code/hooks.js';
 import type { WatcherHealth } from '../adapters/claude-code/fs-adapter.js';
@@ -93,6 +95,8 @@ function routes(d: Deps): Route[] {
     { methods: GET, path: '/api/attention', auth: 'bearer', run: ({ res }) => send(res, 200, d.collector.attentionSummary()) },
     { methods: GET, path: '/api/summaries', auth: 'bearer', run: ({ res }) => getSummaries(d, res) },
     { methods: POST, path: '/api/hooks/codex', auth: 'bearer', run: (c) => postHooks(d, c, mapCodexHook) },
+    { methods: POST, path: '/api/hooks/cursor', auth: 'bearer', run: (c) => postHooks(d, c, mapCursorHook) },
+    { methods: POST, path: '/api/hooks/antigravity', auth: 'bearer', run: (c) => postHooks(d, c, mapAntigravityHook) },
     { methods: POST, path: '/api/hooks', auth: 'bearer', run: (c) => postHooks(d, c, mapHookPayload, claudeEvents) },
     { methods: POST, path: '/api/ui/login-code', auth: 'bearer', run: (c) => postLoginCode(d, c) },
     { methods: POST, path: '/api/shutdown', auth: 'bearer', run: ({ res }) => postShutdown(d, res) },

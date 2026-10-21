@@ -135,7 +135,7 @@ export interface SessionSummary {
   inputHash: string;
 }
 
-export type AgentKind = 'claude-code' | 'codex';
+export type AgentKind = 'claude-code' | 'codex' | 'cursor' | 'antigravity';
 
 export interface Session {
   id: string;
